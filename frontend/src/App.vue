@@ -20,7 +20,7 @@
         <CellComponent
           v-for="(cell, cellIndex) in row"
           :key="cellIndex"
-          :value="cell"
+          :value="boardDisplay[rowIndex][cellIndex]"
           :x="rowIndex"
           :y="cellIndex"
           @cell-click="handleCellClick"
@@ -47,7 +47,7 @@ export default defineComponent({
       numMines: 10,
       firstClickRow: 0,
       firstClickCol: 0,
-      board: null as boolean[][] | null, // represents mine locations
+      board: null as boolean[][] | null, // represents mine locations, true = mine
       boardClicks: null as boolean[][] | null, // represents clicked cells
       boardDisplay: null as string[][] | null, // represents cell display values
       boardClicked: false,
@@ -74,7 +74,7 @@ export default defineComponent({
     },
     createEmptyBoard() {
       this.board = Array.from({ length: this.boardHeight }, () =>
-        Array(this.boardWidth).fill(null)
+        Array(this.boardWidth).fill(false)
       );
       this.boardClicks = Array.from({ length: this.boardHeight }, () =>
         Array(this.boardWidth).fill(false)
@@ -85,25 +85,65 @@ export default defineComponent({
       this.boardClicked = false;
     },
     updateBoardWithMines(boardWithMines: boolean[][]) {
-      if (this.board) {
-        this.board = boardWithMines;
-      }
+      this.board = boardWithMines;
     },
     handleCellClick(x: number, y: number) {
       console.log(`Cell clicked at (${x}, ${y})`);
       console.log(this.board);
-
+      
+      // Don't do anything if the cell is already clicked
+      // if (!this.board || !this.boardClicks || this.boardClicks[x][y]) return; 
+      
       // if no cells have been clicked yet, place mines
-      if (this.board && this.boardClicked && this.board[x][y] === null) {
-        console.log('Placing mines')
+      if (!this.boardClicked) {
+        console.log('Placing mines!')
         this.firstClickRow = x;
         this.firstClickCol = y;
         this.placeMines();
       }
 
+      this.boardClicked = true;
+      
+      // Game over logic
+      if (this.board && this.board[x][y] === true) {
+        alert('Game Over! You hit a mine.');
+        this.revealAllMines();
+        return;
+      }
+
       this.boardClicks![x][y] = true;
       this.updateBoardDisplay();
-      this.refreshUI();
+      this.checkWinCondition();
+      this.$forceUpdate();
+    },
+    revealAllMines() {
+      if (this.board && this.boardDisplay) {
+        for (let i = 0; i < this.boardHeight; i++) {
+          for (let j = 0; j < this.boardWidth; j++) {
+            if (this.board[i][j] === true) {
+              this.boardDisplay[i][j] = '💣';
+            }
+          }
+        }
+      }
+      this.$forceUpdate();
+    },
+    checkWinCondition() {
+      if (!this.board || !this.boardClicks) return false;
+
+      if (this.board && this.boardClicks) {
+        for (let i = 0; i < this.boardHeight; i++) {
+          for (let j = 0; j < this.boardWidth; j++) {
+            // If there is a cell that is not a mine and not clicked, return false
+            if (this.board[i][j] === false && !this.boardClicks[i][j]) {
+              return false;
+            }
+          }
+        }
+        alert('Congratulations! You won!');
+        return true;
+      }
+      return false;
     },
     updateBoardDisplay() {
       if (this.board && this.boardClicks && this.boardDisplay) {
@@ -111,6 +151,8 @@ export default defineComponent({
           for (let j = 0; j < this.boardWidth; j++) {
             if (this.boardClicks[i][j]) {
               if (this.board[i][j] === true) {
+                // log this
+                console.log(`updating board display with bomb emoji at (${i}, ${j})`);
                 this.boardDisplay[i][j] = '💣'; // Display bomb emoji for mines
               } else {
                 const mineCount = this.countAdjacentMines(i, j);
@@ -122,9 +164,6 @@ export default defineComponent({
           }
         }
       }
-    },
-    refreshUI() {
-      
     },
     countAdjacentMines(x: number, y: number): number {
       const directions = [
@@ -147,7 +186,7 @@ export default defineComponent({
     resetGame() {
       this.createEmptyBoard();
       this.updateBoardDisplay();
-      this.refreshUI();
+      this.$forceUpdate();
     },
   },
 });

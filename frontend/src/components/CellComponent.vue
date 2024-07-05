@@ -10,10 +10,10 @@
   export default defineComponent({
     name: 'CellComponent',
     props: {
-      value: {
-        type: Number as PropType<number>,
-        default: null,
-      },
+        value: {
+            type: [Boolean, String] as PropType<boolean | string>,
+            default: null,
+        },
       x: {
         type: Number as PropType<number>,
         required: true,
@@ -24,9 +24,11 @@
       },
     },
     computed: {
-      displayValue() {
-        return this.value === null ? '' : this.value;
-      },
+        displayValue() {
+            if (this.value === true) return '💣';
+            if (this.value === false) return '';
+            return this.value;
+        },
     },
     methods: {
       handleClick() {
