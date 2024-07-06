@@ -24,6 +24,7 @@
           :x="rowIndex"
           :y="cellIndex"
           @cell-click="handleCellClick"
+          @cell-flag="handleCellFlag"
         />
       </div>
     </div>
@@ -44,7 +45,7 @@ export default defineComponent({
     return {
       boardWidth: 5,
       boardHeight: 5,
-      numMines: 0,
+      numMines: 4,
       firstClickRow: 0,
       firstClickCol: 0,
       board: null as boolean[][] | null, // represents mine locations, true = mine
@@ -77,6 +78,7 @@ export default defineComponent({
         console.log("Received board from server:");
         this.printBoard(response.data.board);
         this.updateBoardWithMines(response.data.board);
+        this.revealSquare(this.firstClickRow, this.firstClickCol);
         this.updateBoardDisplay();
         this.$forceUpdate();
       } catch (error) {
@@ -117,7 +119,7 @@ export default defineComponent({
     handleCellClick(x: number, y: number) {
       console.log(`Cell clicked at (${x}, ${y})`);
 
-      if (!this.board || !this.boardClicks || this.boardClicks[x][y]) return;
+      if (!this.board || !this.boardClicks || this.boardClicks[x][y] || this.gameOver) return;
 
       if (!this.boardClicked) {
         console.log("Placing mines!");
@@ -125,18 +127,29 @@ export default defineComponent({
         this.firstClickCol = y;
         this.boardClicked = true;
         this.placeMines();
-      }
-
-      // Game over logic
-      if (this.board[x][y] === true) {
-        alert("Game Over! You hit a mine.");
-        this.revealAllMines();
         return;
       }
 
-      this.boardClicks[x][y] = true;
+      this.revealSquare(x, y);
       this.updateBoardDisplay();
-      this.checkWinCondition();
+      
+      if (!this.gameOver) {
+        this.checkWinCondition();
+      }
+      
+      this.$forceUpdate();
+    },
+    handleCellFlag(x: number, y: number) {
+      console.log(`Cell flagged at (${x}, ${y})`);
+
+      if (!this.board || !this.boardClicks || this.boardClicks[x][y] || this.gameOver) return;
+
+      if (this.boardDisplay![x][y] === "🚩") {
+        this.boardDisplay![x][y] = "";
+      } else {
+        this.boardDisplay![x][y] = "🚩";
+      }
+
       this.$forceUpdate();
     },
     revealAllMines() {
@@ -154,19 +167,18 @@ export default defineComponent({
     checkWinCondition() {
       if (!this.board || !this.boardClicks) return false;
 
-      if (this.board && this.boardClicks) {
-        for (let i = 0; i < this.boardHeight; i++) {
-          for (let j = 0; j < this.boardWidth; j++) {
-            // If there is a cell that is not a mine and not clicked, return false
-            if (this.board[i][j] === false && !this.boardClicks[i][j]) {
-              return false;
-            }
+      for (let i = 0; i < this.boardHeight; i++) {
+        for (let j = 0; j < this.boardWidth; j++) {
+          if (this.board[i][j] === false && !this.boardClicks[i][j]) {
+            return false;
           }
         }
-        alert("Congratulations! You won!");
-        return true;
       }
-      return false;
+      
+      this.gameOver = true;
+      alert("Congratulations! You won!");
+      this.revealAllMines();
+      return true;
     },
     updateBoardDisplay() {
       if (this.board && this.boardClicks && this.boardDisplay) {
@@ -184,9 +196,7 @@ export default defineComponent({
                 this.boardDisplay[i][j] =
                   mineCount > 0 ? mineCount.toString() : "0";
               }
-            } else {
-              this.boardDisplay[i][j] = "";
-            }
+            } 
           }
         }
 
@@ -194,17 +204,16 @@ export default defineComponent({
       }
     },
     countAdjacentMines(x: number, y: number): number {
+      if (!this.board) return 0;
+
       const directions = [
-        [-1, -1],
-        [-1, 0],
-        [-1, 1],
-        [0, -1],
-        [0, 1],
-        [1, -1],
-        [1, 0],
-        [1, 1],
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],          [0, 1],
+        [1, -1], [1, 0], [1, 1]
       ];
+
       let mineCount = 0;
+
       for (const [dx, dy] of directions) {
         const newX = x + dx;
         const newY = y + dy;
@@ -214,13 +223,55 @@ export default defineComponent({
           newY >= 0 &&
           newY < this.boardWidth
         ) {
-          if (this.board![newX][newY] === true) {
+          if (this.board[newX][newY] === true) {
             mineCount++;
           }
         }
       }
+
       return mineCount;
     },
+    revealAdjacentSquares(x: number, y: number) {
+      const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],          [0, 1],
+        [1, -1], [1, 0], [1, 1]
+      ];
+
+      for (const [dx, dy] of directions) {
+        const newX = x + dx;
+        const newY = y + dy;
+        if (
+          newX >= 0 &&
+          newX < this.boardHeight &&
+          newY >= 0 &&
+          newY < this.boardWidth &&
+          !this.boardClicks![newX][newY]
+        ) {
+          this.revealSquare(newX, newY);
+        }
+      }
+    },
+    revealSquare(x: number, y: number) {
+    if (!this.board || !this.boardClicks || !this.boardDisplay || this.boardClicks[x][y]) return;
+
+    this.boardClicks[x][y] = true;
+
+    if (this.board[x][y] === true) {
+      console.log(`Bomb found at (${x}, ${y})`);
+      this.boardDisplay[x][y] = "💣";
+      this.gameOver = true;
+      alert("Game Over! You hit a mine.");
+      this.revealAllMines();
+    } else {
+      const mineCount = this.countAdjacentMines(x, y);
+      this.boardDisplay[x][y] = mineCount > 0 ? mineCount.toString() : "0";
+
+      if (mineCount === 0) {
+        this.revealAdjacentSquares(x, y);
+      }
+    }
+  },
     resetGame() {
       this.initializeBoard();
       this.updateBoardDisplay();
