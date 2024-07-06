@@ -1,21 +1,25 @@
 <template>
   <div id="app">
-    <h1>Minesweeper Client</h1>
-    <div>Time: {{ formatTimer(elapsedTime) }}</div>
-    <div>
-      <label for="boardWidth">Board Width:</label>
-      <input type="number" v-model="boardWidth" id="boardWidth" />
+    <h1>Minesweeper</h1>
+    <div class="timer">Time: {{ formatTimer(elapsedTime) }}</div>
+    <div class="controls">
+      <div class="control-item">
+        <label for="boardWidth">Board Width:</label>
+        <input type="number" v-model="boardWidth" id="boardWidth" />
+      </div>
+      <div class="control-item">
+        <label for="boardHeight">Board Height:</label>
+        <input type="number" v-model="boardHeight" id="boardHeight" />
+      </div>
+      <div class="control-item">
+        <label for="numMines">Number of Mines:</label>
+        <input type="number" v-model="numMines" id="numMines" />
+      </div>
     </div>
-    <div>
-      <label for="boardHeight">Board Height:</label>
-      <input type="number" v-model="boardHeight" id="boardHeight" />
-    </div>
-    <div>
-      <label for="numMines">Number of Mines:</label>
-      <input type="number" v-model="numMines" id="numMines" />
-    </div>
+  <div>
     <button @click="initializeBoard">Initialize Board</button>
     <button @click="resetGame">Reset Game</button>
+  </div>
     <div class="board" v-if="board">
       <div v-for="(row, rowIndex) in board" :key="rowIndex" class="row">
         <CellComponent
@@ -31,6 +35,132 @@
     </div>
   </div>
 </template>
+
+
+<style>
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --accent-color: #e74c3c;
+  --background-color: #f0f3f5;
+  --text-color: #34495e;
+}
+
+body {
+  background-color: #1E1E1E;
+  color: #FFFFFF;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+#app {
+  font-family: 'Roboto', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: var(--text-color);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem;
+}
+
+h1 {
+  color: #00FFFF;
+  font-size: 3rem;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  letter-spacing: 3px;
+}
+
+.timer {
+  font-family: 'Digital-7', monospace;
+  font-size: 2rem;
+  color: #00FF00;
+  margin-bottom: 3rem;
+}
+
+input[type="number"] {
+  background-color: rgba(0, 191, 255, 0.1);
+  border: 1px solid #00BFFF;
+  color: #FFFFFF;
+  padding: 0.5rem;
+  border-radius: 5px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 2rem; /* Space before the buttons */
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem; /* Space between each control item */
+  width: 100%;
+}
+
+.control-item label {
+  font-size: 1.5rem; /* Larger label text */
+  width: 200px; /* Fixed width for labels to align inputs */
+  text-align: right;
+  margin-right: 1rem;
+}
+
+input[type="number"] {
+  font-size: 1.5rem; /* Larger input text */
+  padding: 0.75rem;
+  width: 100px; /* Fixed width for inputs */
+}
+
+button {
+  background-color: #00BFFF;
+  color: #FFFFFF;
+  border: none;
+  padding: 1rem 2rem;
+  margin-right: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 3rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
+}
+
+.row {
+  display: flex;
+}
+
+/* Add this if you want to style the CellComponent */
+.cell {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(145deg, #2a2a2a, #232323);
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+</style>
 
 <script lang="ts">
 import { defineComponent } from "vue";
@@ -308,35 +438,3 @@ export default defineComponent({
 });
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-.board {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.row {
-  display: flex;
-}
-
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
-}
-</style>
