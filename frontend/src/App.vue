@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <h1>Minesweeper Client</h1>
+    <div>Time: {{ formatTimer(elapsedTime) }}</div>
     <div>
       <label for="boardWidth">Board Width:</label>
       <input type="number" v-model="boardWidth" id="boardWidth" />
@@ -53,9 +54,28 @@ export default defineComponent({
       boardDisplay: null as string[][] | null, // represents cell display values
       boardClicked: false,
       gameOver: false,
+      gameTimer: 0 as number | null,
+      elapsedTime: 0 as number,
     };
   },
   methods: {
+    startTimer() {
+      this.elapsedTime = 0;
+      this.gameTimer = setInterval(() => {
+        this.elapsedTime++;
+      }, 1000);
+    },
+    stopTimer() {
+      if (this.gameTimer) {
+        clearInterval(this.gameTimer);
+        this.gameTimer = null;
+      }
+    },
+    formatTimer(seconds: number): string {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    },
     async initializeBoard() {
       try {
         const response = await initializeBoard(
@@ -65,6 +85,8 @@ export default defineComponent({
         );
         console.log(response.data);
         this.createEmptyBoard();
+        this.stopTimer();
+        this.elapsedTime = 0;
       } catch (error) {
         console.error(error);
       }
@@ -127,6 +149,7 @@ export default defineComponent({
         this.firstClickCol = y;
         this.boardClicked = true;
         this.placeMines();
+        this.startTimer();
         return;
       }
 
@@ -176,6 +199,7 @@ export default defineComponent({
       }
       
       this.gameOver = true;
+      this.stopTimer();
       alert("Congratulations! You won!");
       this.revealAllMines();
       return true;
@@ -253,28 +277,31 @@ export default defineComponent({
       }
     },
     revealSquare(x: number, y: number) {
-    if (!this.board || !this.boardClicks || !this.boardDisplay || this.boardClicks[x][y]) return;
+      if (!this.board || !this.boardClicks || !this.boardDisplay || this.boardClicks[x][y]) return;
 
-    this.boardClicks[x][y] = true;
+      this.boardClicks[x][y] = true;
 
-    if (this.board[x][y] === true) {
-      console.log(`Bomb found at (${x}, ${y})`);
-      this.boardDisplay[x][y] = "💣";
-      this.gameOver = true;
-      alert("Game Over! You hit a mine.");
-      this.revealAllMines();
-    } else {
-      const mineCount = this.countAdjacentMines(x, y);
-      this.boardDisplay[x][y] = mineCount > 0 ? mineCount.toString() : "0";
+      if (this.board[x][y] === true) {
+        console.log(`Bomb found at (${x}, ${y})`);
+        this.boardDisplay[x][y] = "💣";
+        this.gameOver = true;
+        this.stopTimer();
+        alert("Game Over! You hit a mine.");
+        this.revealAllMines();
+      } else {
+        const mineCount = this.countAdjacentMines(x, y);
+        this.boardDisplay[x][y] = mineCount > 0 ? mineCount.toString() : "0";
 
-      if (mineCount === 0) {
-        this.revealAdjacentSquares(x, y);
+        if (mineCount === 0) {
+          this.revealAdjacentSquares(x, y);
+        }
       }
-    }
-  },
+    },
     resetGame() {
       this.initializeBoard();
       this.updateBoardDisplay();
+      this.stopTimer();
+      this.elapsedTime = 0;
       this.$forceUpdate();
     },
   },
