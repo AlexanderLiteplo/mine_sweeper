@@ -25,8 +25,11 @@
     },
     computed: {
         displayValue() {
-            if (this.value === true) return '💣';
-            if (this.value === false) return '';
+            console.log('displayValue');
+            console.log(this.value);
+            // if (this.value === true) return '💣';
+            // if (this.value === false) return '';
+            if (this.value === true) return '';
             return this.value;
         },
     },

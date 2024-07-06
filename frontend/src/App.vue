@@ -31,32 +31,37 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { initializeBoard, placeMines } from './api';
-import CellComponent from './components/CellComponent.vue';
+import { defineComponent } from "vue";
+import { initializeBoard, placeMines } from "./api";
+import CellComponent from "./components/CellComponent.vue";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
   components: {
     CellComponent,
   },
   data() {
     return {
-      boardWidth: 10,
-      boardHeight: 10,
-      numMines: 10,
+      boardWidth: 5,
+      boardHeight: 5,
+      numMines: 0,
       firstClickRow: 0,
       firstClickCol: 0,
       board: null as boolean[][] | null, // represents mine locations, true = mine
       boardClicks: null as boolean[][] | null, // represents clicked cells
       boardDisplay: null as string[][] | null, // represents cell display values
       boardClicked: false,
+      gameOver: false,
     };
   },
   methods: {
     async initializeBoard() {
       try {
-        const response = await initializeBoard(this.boardWidth, this.boardHeight, this.numMines);
+        const response = await initializeBoard(
+          this.boardWidth,
+          this.boardHeight,
+          this.numMines
+        );
         console.log(response.data);
         this.createEmptyBoard();
       } catch (error) {
@@ -65,12 +70,30 @@ export default defineComponent({
     },
     async placeMines() {
       try {
-        const response = await placeMines([this.firstClickRow, this.firstClickCol]);
-        console.log(response.data);
+        const response = await placeMines([
+          this.firstClickRow,
+          this.firstClickCol,
+        ]);
+        console.log("Received board from server:");
+        this.printBoard(response.data.board);
         this.updateBoardWithMines(response.data.board);
+        this.updateBoardDisplay();
+        this.$forceUpdate();
       } catch (error) {
         console.error(error);
       }
+    },
+    printBoard(board: boolean[][]) {
+      console.log("Current display state:");
+
+      let output = "";
+      for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[i].length; j++) {
+          output += board[i][j] ? "X " : "O ";
+        }
+        output += "\n";
+      }
+      console.log(output);
     },
     createEmptyBoard() {
       this.board = Array.from({ length: this.boardHeight }, () =>
@@ -80,38 +103,38 @@ export default defineComponent({
         Array(this.boardWidth).fill(false)
       );
       this.boardDisplay = Array.from({ length: this.boardHeight }, () =>
-        Array(this.boardWidth).fill('')
+        Array(this.boardWidth).fill("")
       );
       this.boardClicked = false;
+      this.gameOver = false;
+
+      console.log("Empty board created:");
+      this.printBoard(this.board);
     },
     updateBoardWithMines(boardWithMines: boolean[][]) {
       this.board = boardWithMines;
     },
     handleCellClick(x: number, y: number) {
       console.log(`Cell clicked at (${x}, ${y})`);
-      console.log(this.board);
-      
-      // Don't do anything if the cell is already clicked
-      // if (!this.board || !this.boardClicks || this.boardClicks[x][y]) return; 
-      
-      // if no cells have been clicked yet, place mines
+
+      if (!this.board || !this.boardClicks || this.boardClicks[x][y]) return;
+
       if (!this.boardClicked) {
-        console.log('Placing mines!')
+        console.log("Placing mines!");
         this.firstClickRow = x;
         this.firstClickCol = y;
+        this.boardClicked = true;
         this.placeMines();
       }
 
-      this.boardClicked = true;
-      
       // Game over logic
-      if (this.board && this.board[x][y] === true) {
-        alert('Game Over! You hit a mine.');
+      if (this.board[x][y] === true) {
+        alert("Game Over! You hit a mine.");
         this.revealAllMines();
         return;
       }
 
-      this.boardClicks![x][y] = true;
+      this.boardClicks[x][y] = true;
       this.updateBoardDisplay();
       this.checkWinCondition();
       this.$forceUpdate();
@@ -121,7 +144,7 @@ export default defineComponent({
         for (let i = 0; i < this.boardHeight; i++) {
           for (let j = 0; j < this.boardWidth; j++) {
             if (this.board[i][j] === true) {
-              this.boardDisplay[i][j] = '💣';
+              this.boardDisplay[i][j] = "💣";
             }
           }
         }
@@ -140,42 +163,57 @@ export default defineComponent({
             }
           }
         }
-        alert('Congratulations! You won!');
+        alert("Congratulations! You won!");
         return true;
       }
       return false;
     },
     updateBoardDisplay() {
       if (this.board && this.boardClicks && this.boardDisplay) {
+        console.log("Current board state:");
+        this.printBoard(this.board);
+
         for (let i = 0; i < this.boardHeight; i++) {
           for (let j = 0; j < this.boardWidth; j++) {
             if (this.boardClicks[i][j]) {
               if (this.board[i][j] === true) {
-                // log this
-                console.log(`updating board display with bomb emoji at (${i}, ${j})`);
-                this.boardDisplay[i][j] = '💣'; // Display bomb emoji for mines
+                console.log(`Bomb found at (${i}, ${j})`);
+                this.boardDisplay[i][j] = "💣";
               } else {
                 const mineCount = this.countAdjacentMines(i, j);
-                this.boardDisplay[i][j] = mineCount > 0 ? mineCount.toString() : '';
+                this.boardDisplay[i][j] =
+                  mineCount > 0 ? mineCount.toString() : "0";
               }
             } else {
-              this.boardDisplay[i][j] = ''; // Keep it empty for unclicked cells
+              this.boardDisplay[i][j] = "";
             }
           }
         }
+
+        this.printBoard(this.board);
       }
     },
     countAdjacentMines(x: number, y: number): number {
       const directions = [
-        [-1, -1], [-1, 0], [-1, 1],
-        [0, -1],          [0, 1],
-        [1, -1], [1, 0], [1, 1]
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, -1],
+        [0, 1],
+        [1, -1],
+        [1, 0],
+        [1, 1],
       ];
       let mineCount = 0;
       for (const [dx, dy] of directions) {
         const newX = x + dx;
         const newY = y + dy;
-        if (newX >= 0 && newX < this.boardHeight && newY >= 0 && newY < this.boardWidth) {
+        if (
+          newX >= 0 &&
+          newX < this.boardHeight &&
+          newY >= 0 &&
+          newY < this.boardWidth
+        ) {
           if (this.board![newX][newY] === true) {
             mineCount++;
           }
@@ -184,7 +222,7 @@ export default defineComponent({
       return mineCount;
     },
     resetGame() {
-      this.createEmptyBoard();
+      this.initializeBoard();
       this.updateBoardDisplay();
       this.$forceUpdate();
     },
