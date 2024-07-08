@@ -47,7 +47,7 @@ export function useMinesweeper() {
       stopTimer();
       elapsedTime.value = 0;
     } catch (error) {
-      console.error(error);
+      alert("Failed to initialize board. Please ensure number of mines is not greater than width x height, and that width and height are positive.");
     }
   }
 
