@@ -28,10 +28,10 @@
       },
     },
     computed: {
-      displayValue() {
+      displayValue(): any {
             console.log('displayValue');
             console.log(this.value);
-            
+
             if (this.value === true) return '';
             return this.value;
       },
