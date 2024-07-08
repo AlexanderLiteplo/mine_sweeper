@@ -26,6 +26,12 @@ cd frontend
 yarn install
 ```
 
+### Set up the backend:
+```bash
+pip install flask
+pip install flask-cors
+```
+
 ## Setup
 
 ### Clone this repository
