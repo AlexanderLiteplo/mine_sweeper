@@ -47,9 +47,10 @@ input[type="number"] {
 
 .controls {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 2rem; /* Space before the buttons */
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 .control-item {

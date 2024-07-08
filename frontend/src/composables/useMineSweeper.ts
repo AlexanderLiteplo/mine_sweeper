@@ -2,9 +2,9 @@ import { ref, computed } from 'vue';
 import { initializeBoard as apiInitializeBoard, placeMines as apiPlaceMines } from "../api";
 
 export function useMinesweeper() {
-  const boardWidth = ref(5);
-  const boardHeight = ref(5);
-  const numMines = ref(4);
+  const boardWidth = ref(10);
+  const boardHeight = ref(10);
+  const numMines = ref(10);
   const firstClickRow = ref(0);
   const firstClickCol = ref(0);
   const board = ref<boolean[][] | null>(null);
